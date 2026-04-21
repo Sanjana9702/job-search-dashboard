@@ -1,12 +1,22 @@
 import { NextResponse } from "next/server";
 import { google } from "googleapis";
 import { prisma } from "@/lib/prisma";
+import { getUserId } from "@/lib/session";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
+  const state = searchParams.get("state"); // userId passed as state
 
   if (!code) {
+    return NextResponse.redirect(new URL("/?error=oauth_failed", request.url));
+  }
+
+  // Double-check: verify the session user matches the state userId
+  const sessionUserId = await getUserId();
+  const userId = sessionUserId instanceof NextResponse ? state : sessionUserId;
+
+  if (!userId) {
     return NextResponse.redirect(new URL("/?error=oauth_failed", request.url));
   }
 
@@ -20,14 +30,14 @@ export async function GET(request: Request) {
     const { tokens } = await oauth2Client.getToken(code);
 
     await prisma.oAuthToken.upsert({
-      where: { id: "singleton" },
+      where: { userId },
       update: {
         accessToken: tokens.access_token!,
         refreshToken: tokens.refresh_token ?? undefined,
         expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
       },
       create: {
-        id: "singleton",
+        userId,
         accessToken: tokens.access_token!,
         refreshToken: tokens.refresh_token ?? null,
         expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,

@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calcFollowUpDate } from "@/lib/follow-up";
 import { Status } from "@/types";
+import { getUserId } from "@/lib/session";
 
 export async function GET() {
+  const userId = await getUserId();
+  if (userId instanceof NextResponse) return userId;
+
   try {
     const applications = await prisma.application.findMany({
+      where: { userId },
       include: { _count: { select: { contacts: true } } },
       orderBy: { createdAt: "desc" },
     });
@@ -17,6 +22,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const userId = await getUserId();
+  if (userId instanceof NextResponse) return userId;
+
   try {
     const body = await request.json();
     const { company, role, jobUrl, status = "Applied", appliedDate, notes } = body;
@@ -30,6 +38,7 @@ export async function POST(request: Request) {
 
     const application = await prisma.application.create({
       data: {
+        userId,
         company: company.trim(),
         role: role.trim(),
         jobUrl: jobUrl?.trim() || null,

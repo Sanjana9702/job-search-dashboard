@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Header } from "@/components/dashboard/Header";
 import { TableView } from "@/components/dashboard/TableView";
 import { KanbanView } from "@/components/dashboard/KanbanView";
@@ -13,6 +15,15 @@ import { Suspense } from "react";
 
 function Dashboard() {
   const searchParams = useSearchParams();
+  const { status } = useSession();
+  const router = useRouter();
+
+  // Redirect unauthenticated users to sign-in
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/signin");
+    }
+  }, [status, router]);
 
   const [applications, setApplications] = useState<ApplicationWithCounts[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,6 +87,17 @@ function Dashboard() {
     setView(v);
     localStorage.setItem("dashboard-view", v);
   }
+
+  // Show a minimal loading state while checking auth
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
+        Loading…
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") return null;
 
   return (
     <div className="min-h-screen bg-background">

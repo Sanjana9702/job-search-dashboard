@@ -7,6 +7,7 @@ import { ApplicationWithCounts } from "@/types";
 import { Plus, RefreshCw, Mail, Search, LayoutList, Columns3 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { UserMenu } from "@/components/dashboard/UserMenu";
 
 interface Props {
   applications: ApplicationWithCounts[];
@@ -69,7 +70,7 @@ export function Header({
         {/* Row 1: title + view toggle */}
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-bold tracking-tight">Job Search</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div className="flex rounded-lg border overflow-hidden">
               <button
                 onClick={() => onViewChange("table")}
@@ -90,6 +91,7 @@ export function Header({
                 <Columns3 className="h-3.5 w-3.5" /> Kanban
               </button>
             </div>
+            <UserMenu />
           </div>
         </div>
 

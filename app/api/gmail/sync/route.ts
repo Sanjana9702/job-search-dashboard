@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
 import { calcFollowUpDate } from "@/lib/follow-up";
 import { Status, STATUS_ORDER } from "@/types";
+import { getUserId } from "@/lib/session";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -140,8 +141,11 @@ Rules:
 // ─── Route ────────────────────────────────────────────────────────────────
 
 export async function POST() {
+  const userId = await getUserId();
+  if (userId instanceof NextResponse) return userId;
+
   try {
-    const tokenRecord = await prisma.oAuthToken.findUnique({ where: { id: "singleton" } });
+    const tokenRecord = await prisma.oAuthToken.findUnique({ where: { userId } });
     if (!tokenRecord) {
       return NextResponse.json(
         { error: "Gmail not connected. Please connect Gmail first." },
@@ -211,7 +215,7 @@ export async function POST() {
     let skipped = 0;
     const errors: string[] = [];
 
-    const existingApps = await prisma.application.findMany();
+    const existingApps = await prisma.application.findMany({ where: { userId } });
 
     for (const id of messageIds) {
       try {
@@ -306,6 +310,7 @@ export async function POST() {
           const followUpDate = calcFollowUpDate(inferredStatus, appliedDate);
           const newApp = await prisma.application.create({
             data: {
+              userId,
               company: parsed.company,
               role: parsed.role,
               status: inferredStatus,
