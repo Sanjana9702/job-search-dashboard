@@ -6,6 +6,16 @@ A personal job search tracker that replaces spreadsheets and sticky notes. Log a
 
 ---
 
+## Screenshots
+
+| Table View | Kanban View |
+|---|---|
+| ![Table view](public/screenshots/dashboard-table.png) | ![Kanban view](public/screenshots/dashboard-kanban.png) |
+
+![Sign-in page](public/screenshots/signin.png)
+
+---
+
 ## Features
 
 - **Kanban & Table views** — drag cards between stages or manage a sortable table
