@@ -8,7 +8,7 @@ import { Plus, RefreshCw, Mail, Search, LayoutList, Columns3 } from "lucide-reac
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { UserMenu } from "@/components/dashboard/UserMenu";
-import { DateFilter, DateRange, DEFAULT_DATE_RANGE } from "@/components/dashboard/DateFilter";
+import { DateFilter, DateRange } from "@/components/dashboard/DateFilter";
 
 interface Props {
   applications: ApplicationWithCounts[];
