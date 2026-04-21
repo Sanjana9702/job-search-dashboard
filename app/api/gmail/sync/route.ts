@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { google, gmail_v1 } from "googleapis";
 import Anthropic from "@anthropic-ai/sdk";
