@@ -8,6 +8,7 @@ import { Plus, RefreshCw, Mail, Search, LayoutList, Columns3 } from "lucide-reac
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { UserMenu } from "@/components/dashboard/UserMenu";
+import { DateFilter, DateRange, DEFAULT_DATE_RANGE } from "@/components/dashboard/DateFilter";
 
 interface Props {
   applications: ApplicationWithCounts[];
@@ -15,6 +16,8 @@ interface Props {
   onViewChange: (v: "table" | "kanban") => void;
   search: string;
   onSearchChange: (s: string) => void;
+  dateRange: DateRange;
+  onDateRangeChange: (r: DateRange) => void;
   onAddClick: () => void;
   onSyncDone: () => void;
   gmailConnected: boolean;
@@ -26,6 +29,8 @@ export function Header({
   onViewChange,
   search,
   onSearchChange,
+  dateRange,
+  onDateRangeChange,
   onAddClick,
   onSyncDone,
   gmailConnected,
@@ -103,7 +108,7 @@ export function Header({
           <Stat label="Offers" value={offers} accent="green" />
         </div>
 
-        {/* Row 3: search + action buttons */}
+        {/* Row 3: search + filters + action buttons */}
         <div className="flex items-center gap-3 flex-wrap">
           <div className="relative flex-1 min-w-[200px] max-w-sm">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -114,6 +119,7 @@ export function Header({
               className="pl-8"
             />
           </div>
+          <DateFilter value={dateRange} onChange={onDateRangeChange} />
           <div className="flex gap-2 ml-auto">
             <Button variant="outline" onClick={handleSync} disabled={syncing}>
               {syncing ? (

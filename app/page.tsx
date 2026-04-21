@@ -12,6 +12,8 @@ import { ApplicationWithCounts } from "@/types";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { DateRange, DEFAULT_DATE_RANGE } from "@/components/dashboard/DateFilter";
+import { parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
 
 function Dashboard() {
   const searchParams = useSearchParams();
@@ -34,6 +36,7 @@ function Dashboard() {
     return "table";
   });
   const [search, setSearch] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange>(DEFAULT_DATE_RANGE);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [gmailConnected, setGmailConnected] = useState(false);
@@ -83,6 +86,15 @@ function Dashboard() {
       .catch(() => {});
   }, []);
 
+  // Apply date filter client-side
+  const filteredApplications = applications.filter((a) => {
+    if (!dateRange.from && !dateRange.to) return true;
+    const applied = parseISO(a.appliedDate);
+    if (dateRange.from && isBefore(applied, startOfDay(dateRange.from))) return false;
+    if (dateRange.to   && isAfter(applied,  endOfDay(dateRange.to)))   return false;
+    return true;
+  });
+
   function handleViewChange(v: "table" | "kanban") {
     setView(v);
     localStorage.setItem("dashboard-view", v);
@@ -102,11 +114,13 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Header
-        applications={applications}
+        applications={filteredApplications}
         view={view}
         onViewChange={handleViewChange}
         search={search}
         onSearchChange={setSearch}
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
         onAddClick={() => setShowAddModal(true)}
         onSyncDone={fetchApplications}
         gmailConnected={gmailConnected}
@@ -119,13 +133,13 @@ function Dashboard() {
           </div>
         ) : view === "table" ? (
           <TableView
-            applications={applications}
+            applications={filteredApplications}
             onRowClick={setSelectedId}
             search={search}
           />
         ) : (
           <KanbanView
-            applications={applications}
+            applications={filteredApplications}
             onCardClick={setSelectedId}
             onUpdated={fetchApplications}
             search={search}
