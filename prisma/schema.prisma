@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Status values: Applied | Networking | Phone Screen | Interview | Offer | Rejected | Withdrawn
+model Application {
+  id           String    @id @default(uuid())
+  company      String
+  role         String
+  jobUrl       String?
+  status       String    @default("Applied")
+  appliedDate  DateTime
+  followUpDate DateTime?
+  notes        String?
+  source       String    @default("manual") // manual | gmail_sync
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  contacts Contact[]
+  timeline Timeline[]
+}
+
+model Contact {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  name          String
+  role          String?
+  platform      String      @default("linkedin") // linkedin | email | other
+  outreachDate  DateTime
+  notes         String?
+  createdAt     DateTime    @default(now())
+}
+
+model Timeline {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  status        String
+  note          String?
+  createdAt     DateTime    @default(now())
+}
+
+model OAuthToken {
+  id           String    @id @default("singleton")
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
