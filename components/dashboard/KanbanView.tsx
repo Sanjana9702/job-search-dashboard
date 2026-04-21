@@ -128,6 +128,7 @@ function KanbanColumn({
 
 export function KanbanView({ applications, onCardClick, onUpdated, search }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [hideEmpty, setHideEmpty] = useState(true);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -146,6 +147,11 @@ export function KanbanView({ applications, onCardClick, onUpdated, search }: Pro
   ) as Record<Status, ApplicationWithCounts[]>;
 
   const activeApp = activeId ? applications.find((a) => a.id === activeId) : null;
+
+  // While dragging, show all columns so every status is a valid drop target
+  const visibleStatuses = (activeId || !hideEmpty)
+    ? STATUSES
+    : STATUSES.filter((s) => (byStatus[s]?.length ?? 0) > 0);
 
   function handleDragStart(event: DragStartEvent) {
     setActiveId(event.active.id as string);
@@ -184,8 +190,16 @@ export function KanbanView({ applications, onCardClick, onUpdated, search }: Pro
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <div className="flex items-center justify-end mb-3">
+        <button
+          onClick={() => setHideEmpty((h) => !h)}
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {hideEmpty ? "Show empty columns" : "Hide empty columns"}
+        </button>
+      </div>
       <div className="flex gap-4 overflow-x-auto pb-4 pt-1 px-1 min-h-[60vh]">
-        {STATUSES.map((status) => (
+        {visibleStatuses.map((status) => (
           <KanbanColumn
             key={status}
             status={status}
