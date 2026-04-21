@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApplicationWithCounts } from "@/types";
-import { Plus, RefreshCw, Mail, Search, LayoutList, Columns3 } from "lucide-react";
+import { Plus, RefreshCw, Mail, Search, LayoutList, Columns3, Download } from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { UserMenu } from "@/components/dashboard/UserMenu";
@@ -36,6 +37,43 @@ export function Header({
   gmailConnected,
 }: Props) {
   const [syncing, setSyncing] = useState(false);
+
+  function handleExport() {
+    if (applications.length === 0) {
+      toast.error("No applications to export");
+      return;
+    }
+
+    const headers = ["Company", "Role", "Status", "Applied Date", "Follow-up Date", "Source", "Job URL", "Contacts", "Notes"];
+
+    const escape = (v: string | null | undefined) => {
+      if (v == null) return "";
+      const s = String(v).replace(/"/g, '""');
+      return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s}"` : s;
+    };
+
+    const rows = applications.map((a) => [
+      escape(a.company),
+      escape(a.role),
+      escape(a.status),
+      escape(a.appliedDate ? format(parseISO(a.appliedDate), "yyyy-MM-dd") : ""),
+      escape(a.followUpDate ? format(parseISO(a.followUpDate), "yyyy-MM-dd") : ""),
+      escape(a.source),
+      escape(a.jobUrl),
+      escape(String(a._count.contacts)),
+      escape(a.notes),
+    ]);
+
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `job-applications-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${applications.length} application${applications.length !== 1 ? "s" : ""}`);
+  }
 
   const total = applications.length;
   const active = applications.filter((a) => !["Rejected", "Withdrawn"].includes(a.status)).length;
@@ -121,6 +159,9 @@ export function Header({
           </div>
           <DateFilter value={dateRange} onChange={onDateRangeChange} />
           <div className="flex gap-2 ml-auto">
+            <Button variant="outline" onClick={handleExport} disabled={applications.length === 0}>
+              <Download className="h-4 w-4 mr-1.5" /> Export CSV
+            </Button>
             <Button variant="outline" onClick={handleSync} disabled={syncing}>
               {syncing ? (
                 <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />
