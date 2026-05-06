@@ -167,7 +167,7 @@ export async function POST() {
     });
     oauth2Client.on("tokens", async (tokens) => {
       await prisma.oAuthToken.update({
-        where: { id: "singleton" },
+        where: { userId },
         data: {
           accessToken: tokens.access_token ?? tokenRecord.accessToken,
           refreshToken: tokens.refresh_token ?? tokenRecord.refreshToken,
@@ -348,7 +348,26 @@ export async function POST() {
     });
   } catch (e) {
     console.error("Gmail sync error:", e);
-    const msg = e instanceof Error ? e.message : "Gmail sync failed";
+
+    // Google's OAuth error can live in several places depending on the library version
+    const msg = e instanceof Error ? e.message : String(e);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const responseError = (e as any)?.response?.data?.error ?? "";
+    const isInvalidGrant =
+      msg.includes("invalid_grant") ||
+      msg.includes("Invalid Credentials") ||
+      responseError === "invalid_grant" ||
+      responseError.includes("invalid_grant");
+
+    if (isInvalidGrant) {
+      // Clear the stale token so the UI shows "Connect Gmail" again
+      await prisma.oAuthToken.deleteMany({ where: { userId } });
+      return NextResponse.json(
+        { error: "Gmail connection expired. Please reconnect Gmail." },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
