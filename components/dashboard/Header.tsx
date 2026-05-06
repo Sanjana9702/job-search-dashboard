@@ -89,7 +89,16 @@ export function Header({
     try {
       const res = await fetch("/api/gmail/sync", { method: "POST" });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Sync failed");
+      if (!res.ok) {
+        const msg = data.error ?? "Sync failed";
+        // Token revoked or expired — clear local state and reconnect
+        if (res.status === 401 && msg.includes("reconnect")) {
+          toast.error("Gmail connection expired — reconnecting…");
+          setTimeout(() => { window.location.href = "/api/auth/google"; }, 1500);
+          return;
+        }
+        throw new Error(msg);
+      }
       toast.success(
         `Gmail sync complete: ${data.updated} updated, ${data.created} created, ${data.skipped} skipped`
       );
